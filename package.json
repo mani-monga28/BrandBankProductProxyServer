@@ -1,0 +1,17 @@
+{
+  "name": "salesforce-proxy",
+  "version": "1.0.0",
+  "description": "A proxy to fetch Salesforce product data",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "axios": "^0.27.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
