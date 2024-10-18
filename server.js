@@ -19,6 +19,28 @@ let accessTokenExpiry = null;
 const productCache = {};
 const productCacheTTL = 5 * 60 * 1000;  // 5 minutes TTL
 
+function formatData(pData) {
+    const imagesByColor = {};
+
+    pData.imageGroups.forEach(group => {
+        const colorCode = group.variationAttributes.find(attr => attr.id === 'color').values[0].value;
+
+        // Map the images to the color code
+        imagesByColor[colorCode] = group.images.map(image => ({
+            url: 'https://www.seedheritage.com/' + new URL(image.absUrl).pathname,
+            alt: image.alt.default,
+            title: image.title.default
+        }));
+    });
+
+
+    const jsonObj = {
+        id: pData.id,
+        ImageByColor: imagesByColor
+    }
+    return(imagesByColor);
+}
+
 // Function to get a new access token or use the cached one
 async function getAccessToken() {
     const currentTime = new Date().getTime();
@@ -71,12 +93,14 @@ async function getProductData(productId) {
             }
         });
 
+        const formattedData = formatData(response.data);
+
         productCache[productId] = {
-            data: response.data,
+            data: formattedData,
             expiry: currentTime + productCacheTTL
         };
 
-        return response.data;
+        return formattedData;
     } catch (error) {
         throw new Error('Failed to fetch product data');
     }
