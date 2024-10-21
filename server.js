@@ -21,7 +21,6 @@ const productCacheTTL = 5 * 60 * 1000;  // 5 minutes TTL
 
 function formatData(pData) {
     const imagesByColor = {};
-
     pData.imageGroups.forEach(group => {
         const colorCode = group.variationAttributes.find(attr => attr.id === 'color').values[0].value;
 
@@ -113,6 +112,38 @@ app.get('/api/product/:productId', async (req, res) => {
     try {
         const productData = await getProductData(productId);
         res.json(productData);
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send('Failed to fetch product data');
+    }
+});
+
+// Route to fetch multiple products in parallel
+app.post('/api/products', async (req, res) => {
+    const { productIds } = req.body;
+
+    if (!Array.isArray(productIds)) {
+        return res.status(400).send('productIds should be an array');
+    }
+
+    try {
+        // Fetch all product data simultaneously
+        const productsData = await Promise.all(
+            productIds.map(async (productId) => {
+                try {
+                    const productData = await getProductData(productId);
+                    // Map product ID as key to an object containing product images
+                    return { [productId]: productData }; // Adjusted structure
+                } catch (error) {
+                    return { [productId]: { error: 'Failed to fetch data' } }; // Return error for individual products
+                }
+            })
+        );
+
+        // Combine the results into a single object
+        const responseObject = Object.assign({}, ...productsData);
+
+        res.json(responseObject);
     } catch (error) {
         console.error(error.message);
         res.status(500).send('Failed to fetch product data');
