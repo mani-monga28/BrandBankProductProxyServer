@@ -1,12 +1,14 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const compression = require('compression');  // Import compression
 
 const app = express();
-const port = process.env.PORT || 3000;  // Heroku provides its own port
+const port = process.env.PORT || 3000;
 
+app.use(compression());  // Enable compression for all responses
 app.use(cors());
-app.use(express.json());  // To parse JSON bodies
+app.use(express.json());
 
 const clientId = 'e4ba10c0-b540-44f3-bc7a-04f6316e15e0';
 const clientSecret = '89GxNuhmt0ZQMGCzMS';  // Replace with your client secret
