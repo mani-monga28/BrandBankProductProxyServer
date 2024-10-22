@@ -26,7 +26,7 @@ function formatData(pData) {
 
         // Map the images to the color code
         imagesByColor[colorCode] = group.images.map(image => ({
-            url: 'https://www.seedheritage.com/' + new URL(image.absUrl).pathname,
+            url: 'https://www.seedheritage.com' + new URL(image.absUrl).pathname,
             alt: image.alt.default,
             title: image.title.default
         }));
