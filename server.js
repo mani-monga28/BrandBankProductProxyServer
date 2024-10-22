@@ -1,25 +1,35 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const compression = require('compression');  // Import compression
+const compression = require('compression');
+const https = require('https');  // Import https module
+require('dotenv').config();
+
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(compression());  // Enable compression for all responses
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 
-const clientId = 'e4ba10c0-b540-44f3-bc7a-04f6316e15e0';
-const clientSecret = '89GxNuhmt0ZQMGCzMS';  // Replace with your client secret
-const shortCode = 'q0u18r0g';
-const organizationId = 'f_ecom_aazi_dev';
+const clientId = process.env.CLIENT_ID;
+const clientSecret = process.env.CLIENT_SECRET;
+const shortCode = process.env.SHORT_CODE;
+const organizationId = process.env.ORGANIZATION_ID;
 
 // Caching variables
 let accessTokenCache = null;
 let accessTokenExpiry = null;
 const productCache = {};
-const productCacheTTL = 5 * 60 * 1000;  // 5 minutes TTL
+const productCacheTTL = 24 * 60 * 60 * 1000;  // 1 day TTL
+
+// Create an https.Agent with keepAlive
+const httpsAgent = new https.Agent({
+    keepAlive: true,            // Keep connections alive
+    maxSockets: 10,             // Limit concurrent sockets
+    keepAliveMsecs: 3000        // Keep-alive timeout in ms
+});
 
 function formatData(pData) {
     const imagesByColor = {};
@@ -34,12 +44,7 @@ function formatData(pData) {
         }));
     });
 
-
-    const jsonObj = {
-        id: pData.id,
-        ImageByColor: imagesByColor
-    }
-    return(imagesByColor);
+    return imagesByColor;
 }
 
 // Function to get a new access token or use the cached one
@@ -62,7 +67,8 @@ async function getAccessToken() {
             headers: {
                 'Authorization': authHeader,
                 'Content-Type': 'application/x-www-form-urlencoded'
-            }
+            },
+            httpsAgent   // Pass the https agent here
         });
 
         accessTokenCache = response.data.access_token;
@@ -91,7 +97,8 @@ async function getProductData(productId) {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
-            }
+            },
+            httpsAgent   // Use the https agent here as well
         });
 
         const formattedData = formatData(response.data);
@@ -135,7 +142,7 @@ app.post('/api/products', async (req, res) => {
                 try {
                     const productData = await getProductData(productId);
                     // Map product ID as key to an object containing product images
-                    return { [productId]: productData }; // Adjusted structure
+                    return { [productId]: productData };
                 } catch (error) {
                     return { [productId]: { error: 'Failed to fetch data' } }; // Return error for individual products
                 }
